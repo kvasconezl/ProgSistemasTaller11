@@ -20,6 +20,26 @@ double obtenerTiempoActual(){
 
 	return secs + nano;
 }
+typedef struct mi_estructuraHilo{
+	int * arreglo;
+	int inicio;
+	int final;
+} estructuraH;
+
+void * funcion_hilo_suma(void *arg){
+	
+	estructuraH *argumentos = (estructuraH *)arg;	
+
+	int i = 0;
+	long suma = 0;
+
+	for(i = argumentos->inicio; i < argumentos->final; i++){
+		suma = suma + (argumentos->arreglo)[i];
+	}
+	
+	return (void *)suma;
+
+}
 
 int main(){
 	srand(time(0));
