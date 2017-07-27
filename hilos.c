@@ -5,9 +5,16 @@
 #include <pthread.h>
 #include <unistd.h>
 
+typedef struct mi_estructuraHilo{
+	int * arreglo;
+	int inicio;
+	int final;
+} estructuraH;
+
+
+
 int aleatorio(int min, int max){
 	return (rand() % (max-min+1)) + min;
-	
 }
 
 int *generaArreglo(int size){
@@ -37,23 +44,75 @@ double obtenerTiempoActual(){
 	return secs + nano;
 }
 
-int main(){
-	srand(time(0));
-	printf("Tiempo primero %.9f\n", obtenerTiempoActual());
-	printf("Aleatorio %d\n", aleatorio(7,200));
-	printf("Tiempo segundo %.9f\n", obtenerTiempoActual());
-	
-	int *a=generaArreglo(5);
 
-	for (int i = 0; i < 5; i++)
-	{
-		printf("%d\n",a[i] );
+void * funcion_hilo_suma(void *arg){
+	
+	estructuraH *argumentos = (estructuraH *)arg;	
+	int i;
+	long suma = 0;
+
+	for(i = argumentos->inicio; i < argumentos->final; i++){
+		suma = suma + (argumentos->arreglo)[i];
 	}
-
 	
-	
-	return 1;
+	return (void *)suma;
 
+}
+
+
+
+int main(int argc, char ** argv){
+	
+	int tamanio = atoi(argv[1]);
+	int hilos = atoi(argv[2]);
+	int espacio = tamanio / hilos;
+	srand(time(0));
+	printf("Tamaño arreglo: %d\n", tamanio);
+	printf("Numero de hilos: %d\n", hilos);
+	printf("Tamaño recorrer por cada hilo: %d\n", espacio);
+	pthread_t id1;
+	
+	int *arreglo = (int *)malloc(tamanio*sizeof(int));
+
+	for (int i = 0; i < tamanio; i++){
+		arreglo[i] = aleatorio(1, 200);
+		printf("%d ", arreglo[i]);
+	}
+	printf("\n");
+	int i;
+	long suma = 0;
+	int inicio = 0;
+
+	estructuraH * estructuraHilos = malloc(sizeof(estructuraH));
+	estructuraHilos->arreglo= arreglo;
+
+	for(i = 0; i < hilos; i++){
+	
+		estructuraHilos->inicio = inicio;
+		estructuraHilos->final = inicio + espacio;
+
+		int status;
+
+		status = pthread_create(&id1, NULL, funcion_hilo_suma, (void *)estructuraHilos);
+
+		if(status < 0){
+			fprintf(stderr, "Error al crear el hilo 1\n");
+			exit(-1);	
+		}
+		
+
+		void * sumaRetorno = NULL;
+
+		int status1 = pthread_join(id1, &sumaRetorno);
+		suma = suma + (long)sumaRetorno;
+
+		if(status1 < 0){
+			fprintf(stderr, "Error al esperar por el hilo 1\n");
+			exit(-1);
+		}
+		inicio = inicio + espacio;
+		printf("Suma: %ld\n", suma);
+	}
 }
 
 
