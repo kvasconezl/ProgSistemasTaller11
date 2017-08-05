@@ -40,16 +40,18 @@ double obtenerTiempoActual() {
     return secs + nano;
 }
 
-void *funcion_hilo_suma(void *arg) {
+int *funcion_hilo_suma(void *arg) {
     estructuraH *argumentos = (estructuraH *) arg;
     int i;
     long suma = 0;
 
     for (i = argumentos->inicio; i < argumentos->final; i++) {
-        suma = suma + (argumentos->arreglo)[i];
+        // printf("%d, %d, %d\n", (argumentos->arreglo)[i], argumentos->inicio, argumentos->final);
+        suma = suma + (long) (argumentos->arreglo)[i];
+        // (argumentos->arreglo)[i] = 0;
     }
 
-    return (void *) suma;
+    return (int *) suma;
 }
 
 int main(int argc, char **argv) {
@@ -65,15 +67,20 @@ int main(int argc, char **argv) {
     printf("Tamaño arreglo: %d\n", tamanio);
     printf("Numero de hilos: %d\n", hilos);
     printf("Tamaño recorrer por cada hilo: %d\n", espacio);
-    pthread_t id1;
+    pthread_t id;
 
     int *arreglo = (int *) malloc(tamanio * sizeof(int));
+    pthread_t idArr[hilos];
+    // void *sumaRetorno = (void *) malloc(hilos * sizeof(NULL));
+    void *sumas[hilos];
+    // sumas = (long *) malloc(hilos * sizeof(long));
 
     for (int i = 0; i < tamanio; i++) {
         arreglo[i] = aleatorio(1, 200);
         printf("%d ", arreglo[i]);
     }
     printf("\n");
+
     int i;
     long suma = 0;
     int inicio = 0;
@@ -87,25 +94,51 @@ int main(int argc, char **argv) {
 
         int status;
 
-        status = pthread_create(&id1, NULL, funcion_hilo_suma, (void *) estructuraHilos);
+        status = pthread_create(&id, NULL, (void *) funcion_hilo_suma, estructuraHilos);
 
-        if (status < 0) {
+        if (status != 0) {
             fprintf(stderr, "Error al crear el hilo 1\n");
             exit(-1);
         }
 
-        void *sumaRetorno = NULL;
+        idArr[i] = id;
+        inicio = inicio + espacio;
 
-        int status1 = pthread_join(id1, &sumaRetorno);
-        suma = suma + (long) sumaRetorno;
+        //     void *sumaRetorno = NULL;
 
-        if (status1 < 0) {
+        //     int status1 = pthread_join(id, &sumaRetorno);
+        //     suma = suma + (long) sumaRetorno;
+
+        //     if (status1 < 0) {
+        //         fprintf(stderr, "Error al esperar por el hilo 1\n");
+        //         exit(-1);
+        //     }
+
+        //     printf("Suma: %ld\n", suma);
+
+        //     return 0;
+        // }
+    }
+
+    // long sumaRetorno[hilos];
+
+    for (i = 0; i < hilos; i++) {
+        // void *sumaRetorno = NULL;
+        sumas[i] = (void *) malloc(sizeof(int *));
+        int status1 = pthread_join(idArr[i], &sumas[i]);
+
+        if (status1 != 0) {
             fprintf(stderr, "Error al esperar por el hilo 1\n");
             exit(-1);
         }
-        inicio = inicio + espacio;
-        printf("Suma: %ld\n", suma);
-
-        return 0;
+        // suma = suma + (long) sumas[i];
+        // printf("Suma %d: %ld\n", i, suma);
     }
+
+    for (i = 0; i < hilos; i++) {
+        suma = suma + (long) sumas[i];
+        printf("Suma %d: %ld\n", i, suma);
+        printf("Suma parcial: %d\n", (int) sumas[i]);
+    }
+    return 0;
 }
